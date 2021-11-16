@@ -1,107 +1,121 @@
-class parallaxTiltEffect {
+(function() {
 
-  constructor({element, tiltEffect}) {
+  // VARIABLES
+  const timeline = document.querySelector(".timeline ol"),
+    elH = document.querySelectorAll(".timeline li > div"),
+    arrows = document.querySelectorAll(".timeline .arrows .arrow"),
+    arrowPrev = document.querySelector(".timeline .arrows .arrow__prev"),
+    arrowNext = document.querySelector(".timeline .arrows .arrow__next"),
+    firstItem = document.querySelector(".timeline li:first-child"),
+    lastItem = document.querySelector(".timeline li:last-child"),
+    xScrolling = 280,
+    disabledClass = "disabled";
 
-    this.element = element;
-    this.container = this.element.querySelector(".container");
-    this.size = [300, 360];
-    [this.w, this.h] = this.size;
+  // START
+  window.addEventListener("load", init);
 
-    this.tiltEffect = tiltEffect;
-
-    this.mouseOnComponent = false;
-
-    this.handleMouseMove = this.handleMouseMove.bind(this);
-    this.handleMouseEnter = this.handleMouseEnter.bind(this);
-    this.handleMouseLeave = this.handleMouseLeave.bind(this);
-    this.defaultStates = this.defaultStates.bind(this);
-    this.setProperty = this.setProperty.bind(this);
-    this.init = this.init.bind(this);
-
-    this.init();
+  function init() {
+    setEqualHeights(elH);
+    animateTl(xScrolling, arrows, timeline);
+    setSwipeFn(timeline, arrowPrev, arrowNext);
+    setKeyboardFn(arrowPrev, arrowNext);
   }
 
-  handleMouseMove(event) {
-    const {offsetX, offsetY} = event;
+  // SET EQUAL HEIGHTS
+  function setEqualHeights(el) {
+    let counter = 0;
+    for (let i = 0; i < el.length; i++) {
+      const singleHeight = el[i].offsetHeight;
 
-    let X;
-    let Y;
-
-    if (this.tiltEffect === "reverse") {
-      X = ((offsetX - (this.w/2)) / 3) / 3;
-      Y = (-(offsetY - (this.h/2)) / 3) / 3;
+      if (counter < singleHeight) {
+        counter = singleHeight;
+      }
     }
 
-    else if (this.tiltEffect === "normal") {
-      X = (-(offsetX - (this.w/2)) / 3) / 3;
-      Y = ((offsetY - (this.h/2)) / 3) / 3;
+    for (let i = 0; i < el.length; i++) {
+      el[i].style.height = `${counter}px`;
     }
-
-    this.setProperty('--rY', X.toFixed(2));
-    this.setProperty('--rX', Y.toFixed(2));
-
-    this.setProperty('--bY', (80 - (X/4).toFixed(2)) + '%');
-    this.setProperty('--bX', (50 - (Y/4).toFixed(2)) + '%');
   }
 
-  handleMouseEnter() {
-    this.mouseOnComponent = true;
-    this.container.classList.add("container--active");
+  // CHECK IF AN ELEMENT IS IN VIEWPORT
+  // http://stackoverflow.com/questions/123999/how-to-tell-if-a-dom-element-is-visible-in-the-current-viewport
+  function isElementInViewport(el) {
+    const rect = el.getBoundingClientRect();
+    return (
+      rect.top >= 0 &&
+      rect.left >= 0 &&
+      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    );
   }
 
-  handleMouseLeave() {
-    this.mouseOnComponent = false;
-    this.defaultStates();
+  // SET STATE OF PREV/NEXT ARROWS
+  function setBtnState(el, flag = true) {
+    if (flag) {
+      el.classList.add(disabledClass);
+    } else {
+      if (el.classList.contains(disabledClass)) {
+        el.classList.remove(disabledClass);
+      }
+      el.disabled = false;
+    }
   }
 
-  defaultStates() {
-    this.container.classList.remove("container--active");
-    this.setProperty('--rY', 0);
-    this.setProperty('--rX', 0);
-    this.setProperty('--bY', '80%');
-    this.setProperty('--bX', '50%');
+  // ANIMATE TIMELINE
+  function animateTl(scrolling, el, tl) {
+    let counter = 0;
+    for (let i = 0; i < el.length; i++) {
+      el[i].addEventListener("click", function() {
+        if (!arrowPrev.disabled) {
+          arrowPrev.disabled = true;
+        }
+        if (!arrowNext.disabled) {
+          arrowNext.disabled = true;
+        }
+        const sign = (this.classList.contains("arrow__prev")) ? "" : "-";
+        if (counter === 0) {
+          tl.style.transform = `translateX(-${scrolling}px)`;
+        } else {
+          const tlStyle = getComputedStyle(tl);
+          // add more browser prefixes if needed here
+          const tlTransform = tlStyle.getPropertyValue("-webkit-transform") || tlStyle.getPropertyValue("transform");
+          const values = parseInt(tlTransform.split(",")[4]) + parseInt(`${sign}${scrolling}`);
+          tl.style.transform = `translateX(${values}px)`;
+        }
+
+        setTimeout(() => {
+          isElementInViewport(firstItem) ? setBtnState(arrowPrev) : setBtnState(arrowPrev, false);
+          isElementInViewport(lastItem) ? setBtnState(arrowNext) : setBtnState(arrowNext, false);
+        }, 1100);
+
+        counter++;
+      });
+    }
   }
 
-  setProperty(p, v) {
-    return this.container.style.setProperty(p, v);
+  // ADD SWIPE SUPPORT FOR TOUCH DEVICES
+  function setSwipeFn(tl, prev, next) {
+    const hammer = new Hammer(tl);
+    hammer.on("swipeleft", () => next.click());
+    hammer.on("swiperight", () => prev.click());
   }
 
-  init() {
-    this.element.addEventListener('mousemove', this.handleMouseMove);
-    this.element.addEventListener('mouseenter', this.handleMouseEnter);
-    this.element.addEventListener('mouseleave', this.handleMouseLeave);
+  // ADD BASIC KEYBOARD FUNCTIONALITY
+  function setKeyboardFn(prev, next) {
+    document.addEventListener("keydown", (e) => {
+      if ((e.which === 37) || (e.which === 39)) {
+        const timelineOfTop = timeline.offsetTop;
+        const y = window.pageYOffset;
+        if (timelineOfTop !== y) {
+          window.scrollTo(0, timelineOfTop);
+        }
+        if (e.which === 37) {
+          prev.click();
+        } else if (e.which === 39) {
+          next.click();
+        }
+      }
+    });
   }
 
-}
-
-const $ = e => document.querySelector(e);
-
-const wrap1 = new parallaxTiltEffect({
-  element: $('.wrap--1'),
-  tiltEffect: 'reverse'
-});
-
-const wrap2 = new parallaxTiltEffect({
-  element: $('.wrap--2'),
-  tiltEffect: 'normal'
-});
-
-const wrap3 = new parallaxTiltEffect({
-  element: $('.wrap--3'),
-  tiltEffect: 'reverse'
-});
-
-let toggle = document.getElementById('toggleDark')
-let image = document.querySelector('.image')
-
-toggle.addEventListener('click', toggleScheme, true)
-
-function toggleScheme () {
-  if (toggle.getAttribute("aria-checked") == "true") {
-      toggle.setAttribute("aria-checked", "false");
-  } else {
-      toggle.setAttribute("aria-checked", "true");
-  }
-  image.classList.toggle('image-dark')
-  image.classList.toggle('image-light')
-}
+})();
