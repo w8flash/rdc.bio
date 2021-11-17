@@ -152,7 +152,7 @@ a {
 
 .page .icon {
   position: absolute;
-  /*top: 10%;*/
+  top: 10%;
   right: 10%;
   left: 0;
   /*width: 270px;*/
@@ -206,10 +206,6 @@ button {
   cursor: pointer;
   outline: none;
 }
-
-
-/* TIMELINE
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
 
 .timeline {
   white-space: nowrap;
@@ -326,9 +322,6 @@ button {
   height: 45px;
 }
 
-
-/* GENERAL MEDIA QUERIES
-–––––––––––––––––––––––––––––––––––––––––––––––––– */
 @media screen and (max-width: 599px) {
   .timeline ol,
   .timeline ol li {
@@ -385,6 +378,7 @@ button {
     display: none;
   }
 }
+
 /* Page Bio */
 
 .content{
@@ -392,7 +386,7 @@ button {
 }
 
 .contain-items{
-	height: 400px;
+	height: 500px;
 	position: relative;
 	margin: 0 0 0;
 }
