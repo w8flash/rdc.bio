@@ -64,6 +64,12 @@ html, body, .page {
   display: block!important;
 }
 
+.main-text {
+  position: relative;
+  top: 40%;
+  right: 5%;
+}
+
 ul .icon:hover {
   opacity: 0.5;
 }
